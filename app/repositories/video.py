@@ -43,7 +43,8 @@ class MeilisearchVideoRepository(VideoRepository, MeilisearchRepository):
         self.index = self.client.index(index_name)
 
     async def create(  # type: ignore[override]
-        self, video: MeilisearchVideo
+        self,
+        video: MeilisearchVideo,
     ) -> MeilisearchVideo:
         documents = [jsonable_encoder(video)]
         task = await self.index.add_documents(documents)
