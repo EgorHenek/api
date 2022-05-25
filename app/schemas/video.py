@@ -14,14 +14,14 @@ class VideoBase(BaseModel):
 
 
 class CreateVideo(VideoBase):
-    @validator('slug', always=True)
+    @validator("slug", always=True)
     def generate_slug(cls, v: str, values: dict) -> str:
         if not v:
-            v = slugify(values['title'])
+            v = slugify(values["title"])
         return v
 
     class Config:
-        fields = {'id': {'exclude': True}}
+        fields = {"id": {"exclude": True}}
 
 
 class PgVideo(VideoBase):
@@ -33,4 +33,4 @@ class MeilisearchVideo(VideoBase):
     id: int
 
     class Config:
-        json_encoders = {date: lambda d: int(d.strftime('%s'))}
+        json_encoders = {date: lambda d: int(d.strftime("%s"))}

@@ -16,10 +16,7 @@ class TestMeilisearchVideoRepository:
         assert await meilisearch_video_repository.get_by_id(video.id)
 
     @pytest.mark.asyncio
-    async def test_delete(
-            self,
-            ms_video: MeilisearchVideo
-    ) -> None:
+    async def test_delete(self, ms_video: MeilisearchVideo) -> None:
         await meilisearch_video_repository.delete(ms_video.id)
         with pytest.raises(MeiliSearchApiError):
             await meilisearch_video_repository.get_by_id(ms_video.id)
@@ -36,9 +33,7 @@ class TestMeilisearchVideoRepository:
 
     @pytest.mark.asyncio
     async def test_update(
-            self,
-            ms_video: MeilisearchVideo,
-            videos: list[Mapping]
+        self, ms_video: MeilisearchVideo, videos: list[Mapping]
     ) -> None:
         video = ms_video.copy()
         video.title = "New title"
@@ -48,8 +43,8 @@ class TestMeilisearchVideoRepository:
 
     @pytest.mark.asyncio
     async def test_delete_all(
-            self,
-            ms_video: MeilisearchVideo,
+        self,
+        ms_video: MeilisearchVideo,
     ) -> None:
         await meilisearch_video_repository.delete_all()
         with pytest.raises(MeiliSearchApiError):

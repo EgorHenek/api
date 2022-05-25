@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Coroutine, Any
+from typing import Any, Coroutine
 
 from fastapi.encoders import jsonable_encoder
 from meilisearch_python_async.task import wait_for_task
@@ -20,10 +20,7 @@ class VideoRepository(ABC):
 
     @abstractmethod
     def get_all(
-            self,
-            *,
-            limit: int = 20,
-            offset: int = 0
+        self, *, limit: int = 20, offset: int = 0
     ) -> list[VideoBase | None]:
         pass
 
@@ -46,8 +43,7 @@ class MeilisearchVideoRepository(VideoRepository, MeilisearchRepository):
         self.index = self.client.index(index_name)
 
     async def create(  # type: ignore[override]
-            self,
-            video: MeilisearchVideo
+        self, video: MeilisearchVideo
     ) -> MeilisearchVideo:
         documents = [jsonable_encoder(video)]
         task = await self.index.add_documents(documents)
@@ -59,17 +55,16 @@ class MeilisearchVideoRepository(VideoRepository, MeilisearchRepository):
         await wait_for_task(self.client.http_client, task.uid)
 
     async def get_all(  # type: ignore[override]
-            self,
-            *,
-            limit: int = 20,
-            offset: int = 0
+        self,
+        *,
+        limit: int = 20,
+        offset: int = 0,
     ) -> list[MeilisearchVideo | None]:
         documents = await self.index.get_documents(limit=limit, offset=offset)
         if documents:
             return parse_obj_as(
-                list[MeilisearchVideo],  # type: ignore
-                documents
-            )
+                list[MeilisearchVideo], documents
+            )  # type: ignore
         return []
 
     async def get_by_id(self, id_: int) -> MeilisearchVideo:
@@ -77,8 +72,8 @@ class MeilisearchVideoRepository(VideoRepository, MeilisearchRepository):
         return MeilisearchVideo.parse_obj(document)
 
     async def update(  # type: ignore[override]
-            self,
-            video: MeilisearchVideo,
+        self,
+        video: MeilisearchVideo,
     ) -> MeilisearchVideo:
         await self.create(video)
         return video
