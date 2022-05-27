@@ -1,0 +1,12 @@
+{
+  "python.testing.pytestArgs": [
+    "tests",
+    "--cov-report",
+    "xml",
+    "--cov",
+    "."
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.envFile": "${workspaceFolder}/.test.env"
+}

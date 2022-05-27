@@ -15,16 +15,22 @@ from app.crud import livestream as livestream_crud
 from app.crud import post as post_crud
 from app.crud import token as tokens_crud
 from app.crud import user as user_crud
-from app.crud import video as video_crud
 from app.db import database
 from app.main import app
-from app.meilisearch import meilisearch_client
-from app.repositories.video import meilisearch_video_repository
+from app.meilisearch import (
+    ms_client,
+    config_ms,
+)
+from app.repositories.user_video import PostgresUserVideoRepository
+from app.repositories.video import (
+    MeilisearchVideoRepository,
+    PostgresVideoRepository,
+)
 from app.schemas.dj import CreateDJ
 from app.schemas.livestreams import CreateLiveStream
 from app.schemas.post import BasePost
-from app.schemas.user import CreateUser
-from app.schemas.video import CreateVideo, MeilisearchVideo
+from app.schemas.user import CreateUser, User
+from app.schemas.video import CreateVideo, MeilisearchVideo, PgVideo
 from app.settings import settings
 
 
@@ -41,6 +47,11 @@ async def db_connect() -> typing.AsyncGenerator[None, None]:
     await database.disconnect()
 
 
+@pytest.fixture(autouse=True, scope="session")
+async def configure_meilisearch() -> None:
+    await config_ms(ms_client)
+
+
 @pytest.fixture(scope="session")
 def event_loop() -> typing.Generator[AbstractEventLoop, None, None]:
     loop = get_event_loop()
@@ -48,25 +59,42 @@ def event_loop() -> typing.Generator[AbstractEventLoop, None, None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def clear_meilisearch() -> None:
+async def clear_meilisearch() -> typing.AsyncGenerator[None, None]:
     await remove_meilisearch_indexes()
     yield
     await remove_meilisearch_indexes()
 
 
-async def remove_meilisearch_indexes():
-    indexes = await meilisearch_client.indexes()
+async def remove_meilisearch_indexes() -> None:
+    indexes = await ms_client.get_indexes()
     if indexes:
         clear_indexes = [
             index
             for index in indexes
             if index.uid.endswith(settings.meilisearch_index_postfix)
         ]
+
         for index in clear_indexes:
-            task = await meilisearch_client.clear_index(index)
+            task = await index.delete_all_documents()
             await wait_for_task(
-                meilisearch_client.client.http_client, task.uid
+                ms_client.http_client,
+                task.uid,
             )
+
+
+@pytest.fixture(scope="session")
+def pg_video_repository() -> PostgresVideoRepository:
+    return PostgresVideoRepository(database)
+
+
+@pytest.fixture(scope="session")
+def pg_user_video_repository() -> PostgresUserVideoRepository:
+    return PostgresUserVideoRepository(database)
+
+
+@pytest.fixture(scope="session")
+def ms_video_repository() -> MeilisearchVideoRepository:
+    return MeilisearchVideoRepository(ms_client)
 
 
 @pytest.fixture
@@ -82,7 +110,18 @@ async def video_data(faker: Faker) -> dict:
 
 
 @pytest.fixture
-async def videos(faker: Faker) -> list[typing.Optional[typing.Mapping]]:
+async def pg_video(
+    video_data: dict,
+    pg_video_repository: PostgresVideoRepository,
+) -> PgVideo:
+    return await pg_video_repository.create(CreateVideo(**video_data))
+
+
+@pytest.fixture
+async def videos(
+    faker: Faker,
+    pg_video_repository: PostgresVideoRepository,
+) -> list[PgVideo]:
     videos_list = [
         CreateVideo(
             title=faker.name(),
@@ -94,7 +133,9 @@ async def videos(faker: Faker) -> list[typing.Optional[typing.Mapping]]:
         )
         for _ in range(3)
     ]
-    result = [await video_crud.add_video(video) for video in videos_list]
+    result = [
+        await pg_video_repository.create(video=video) for video in videos_list
+    ]
     return result
 
 
@@ -119,10 +160,12 @@ async def posts(
 @pytest.fixture
 async def liked_video(
     admin: typing.Mapping,
-    videos: typing.List[typing.Mapping],
-) -> typing.Mapping:
-    await video_crud.like_video(admin["id"], videos[0]["id"])
-    return videos[0]
+    pg_video: PgVideo,
+    pg_user_video_repository: PostgresUserVideoRepository,
+) -> PgVideo:
+    user = User(**admin)
+    await pg_user_video_repository.like_video(user, pg_video)
+    return pg_video
 
 
 @pytest.fixture
@@ -263,7 +306,10 @@ async def api_token(admin: typing.Mapping, faker: Faker) -> str:
 
 
 @pytest.fixture
-async def ms_video(videos: list[typing.Mapping]) -> MeilisearchVideo:
-    video = MeilisearchVideo(**videos[0])
-    await meilisearch_video_repository.create(video)
-    return video
+async def ms_video(
+    pg_video: PgVideo,
+    ms_video_repository: MeilisearchVideoRepository,
+) -> MeilisearchVideo:
+    video = MeilisearchVideo(**pg_video.dict())
+    ms_video = await ms_video_repository.create(video)
+    return ms_video
