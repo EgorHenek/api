@@ -1,12 +1,6 @@
 import typing
-from asyncio import (
-    AbstractEventLoop,
-    get_event_loop,
-)
-from datetime import (
-    datetime,
-    timedelta,
-)
+from asyncio import AbstractEventLoop, get_event_loop
+from datetime import datetime, timedelta
 from random import randint
 
 import pytest
@@ -14,49 +8,28 @@ from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from httpx import AsyncClient
 from meilisearch_python_async.task import wait_for_task
-from sqlalchemy import (
-    create_engine,
-    event,
-)
+from sqlalchemy import create_engine, event
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app import (
-    helpers,
-    tasks,
-)
+from app import helpers, tasks
 from app.crud import dj as djs_crud
 from app.crud import livestream as livestream_crud
 from app.crud import post as post_crud
 from app.crud import token as tokens_crud
 from app.crud import user as user_crud
-from app.db import (
-    database,
-    metadata,
-)
+from app.db import database, metadata
 from app.internal.usecase.repository.video import PostgresVideoRepository
 from app.main import app
-from app.meilisearch import (
-    ms_client,
-    config_ms,
-)
+from app.meilisearch import config_ms, ms_client
 from app.pkg.postgres import get_session
 from app.repositories.user_video import PostgresUserVideoRepository
 from app.schemas.dj import CreateDJ
 from app.schemas.livestreams import CreateLiveStream
 from app.schemas.post import BasePost
-from app.schemas.user import (
-    CreateUser,
-    User,
-)
-from app.schemas.video import (
-    CreateVideo,
-    PgVideo,
-)
+from app.schemas.user import CreateUser, User
+from app.schemas.video import CreateVideo, PgVideo
 from app.settings import settings
 
 
