@@ -4,6 +4,8 @@ from typing import Union
 
 from pydantic import BaseModel, Field, validator
 
+from app.schemas.user import User
+
 
 class BasePost(BaseModel):
     title: str
@@ -29,6 +31,10 @@ class CreatePost(BasePost):
         if v < datetime.now(timezone.utc):
             raise ValueError("должно быть больше текущего")
         return v
+
+
+class NewPostDTO(CreatePost):
+    user: User
 
 
 class Post(BasePost):
