@@ -1,6 +1,6 @@
 import re
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
 
 
 class UserBase(BaseModel):
@@ -36,7 +36,6 @@ class User(UserBase, Admin):
 
 class UserPassword(BaseModel):
     password: str
-    password_confirm: str
 
     @validator("password")
     def password_complexity(cls, v: str) -> str:
@@ -45,11 +44,9 @@ class UserPassword(BaseModel):
             raise ValueError(f"минимальная длина пароля {min_length} символов")
         return v
 
-    @validator("password_confirm")
-    def password_confirmation(cls, v: str, values: dict) -> str:
-        if "password" in values and v != values["password"]:
-            raise ValueError("пароли не совпадают")
-        return v
+
+class NewUserDto(AdvancedUser):
+    hashed_password: str = Field(..., alias="password")
 
 
 class CreateUser(AdvancedUser, UserPassword):
