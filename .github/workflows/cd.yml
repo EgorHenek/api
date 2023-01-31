@@ -18,7 +18,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/EgorHenek/edm_su_api
+            ghcr.io/edm-su/api
           tags: |
             type=sha
             type=semver,pattern={{version}}
@@ -40,7 +40,7 @@ jobs:
 
       - name: Build and push 🎉
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
